@@ -2,7 +2,6 @@
   "name": "create-app-github-actions",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://dhiraj20.github.io/create-react-app-github-actions/",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",

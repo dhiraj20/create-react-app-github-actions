@@ -7,19 +7,26 @@ on:
   pull_request:
     branches:
       - master
-
-permissions:
-  id-token: write
-  pages: write
-  contents: write
   
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      BUCKET: react-app-on-aws-7-22-2025
+      DIST: build
+      REGION: us-east-1
+      DIST_ID: E3BFL2AN2U7IV2
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.REGION }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -31,17 +38,15 @@ jobs:
 
       - name: Build the app
         run: npm run build
-        env:
-          CI: false
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: github-pages-artifact-${{ github.run_id }}
-          path: ./build
-      - name: Deploy to github pages
-        uses: actions/deploy-pages@v4
-        with: 
-          token: ${{ secrets.GITHUB_TOKEN }}
-          artifact_name: github-pages-artifact-${{ github.run_id }}
-  
+      - name: Copy files to the production website with the AWS CLI
+        run: | 
+          aws s3 sync --delete ${{ env.DIST }} s3://${{ env.BUCKET }}
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \ 
+          --distribution-id ${{ env.DIST_ID }} \
+          --paths "/*"
+
+     
